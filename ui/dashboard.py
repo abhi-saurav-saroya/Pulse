@@ -1,6 +1,8 @@
 from rich.console import Console
+from rich.layout import Layout
 from rich.panel import Panel
 from rich.table import Table
+from rich.align import Align
 
 from monitor.cpu import get_cpu_usage
 from monitor.memory import get_memory_info
@@ -9,68 +11,110 @@ from monitor.processes import get_top_processes
 
 from utils.formatter import format_bytes
 
+
 console = Console()
 
-def render_dashboard():
+
+def build_dashboard() -> Panel:
     cpu_usage = get_cpu_usage()
     memory = get_memory_info()
     disk = get_disk_info()
     processes = get_top_processes()
 
-    console.print(
+    # Main layout wrapped inside the parent Pulse panel
+    layout = Layout(name="root")
+
+    # Left side: Disk, Memory, CPU with flexible sizing
+    # Right side: Processes with a larger area
+    layout.split_row(
+        Layout(name="stats", ratio=1, minimum_size=36),
+        Layout(name="processes", ratio=2, minimum_size=60)
+    )
+
+    layout["stats"].split_column(
+        Layout(name="disk", ratio=1, minimum_size=7),
+        Layout(name="memory", ratio=1, minimum_size=7),
+        Layout(name="cpu", size=5)
+    )
+
+    # CPU Panel
+    layout["cpu"].update(
         Panel(
-            "Your System's Heartbeat",
-            title="Pulse",
+            Align.center(f"[bold]{cpu_usage:.1f}%[/bold]", vertical="middle", width=16),
+            title="CPU Usage",
+            border_style="green",
+            padding=(0, 1),
+            expand=True
         )
     )
 
-    console.print(
+    # Memory Panel
+    layout["memory"].update(
         Panel(
-            f"{cpu_usage:.1f}%",
-            title="CPU Usage"
+            "\n".join(
+                [
+                    f"Total : {format_bytes(memory.total)}",
+                    f"Used  : {format_bytes(memory.used)}",
+                    f"Free  : {format_bytes(memory.free)}",
+                    f"Usage : {memory.percent:.1f}%"
+                ]
+            ),
+            title="Memory",
+            border_style="yellow",
+            padding=(1, 2),
+            expand=True
         )
     )
 
-    console.print(
+    # Disk Panel
+    layout["disk"].update(
         Panel(
-            "\n".join([
-                f"Total   : {format_bytes(memory.total)}",
-                f"Used    : {format_bytes(memory.used)}",
-                f"Free    : {format_bytes(memory.free)}",
-                f"Usage   : {memory.percent}%"
-            ]),
-            title="Memory"
+            "\n".join(
+                [
+                    f"Total : {format_bytes(disk.total)}",
+                    f"Used  : {format_bytes(disk.used)}",
+                    f"Free  : {format_bytes(disk.free)}",
+                    f"Usage : {disk.percent:.1f}%"
+                ]
+            ),
+            title="Disk",
+            border_style="magenta",
+            padding=(1, 2),
+            expand=True
         )
     )
 
-    console.print(
-        Panel(
-            "\n".join([
-                f"Total   : {format_bytes(disk.total)}",
-                f"Used    : {format_bytes(disk.used)}",
-                f"Free    : {format_bytes(disk.free)}",
-                f"Usage   : {disk.percent}%"
-            ]),
-            title="Disk"
-        )
-    )
+    # Processes Table
+    process_table = Table(expand=True)
 
-    process_table = Table(show_header=True)
-
-    process_table.add_column("PID")
-    process_table.add_column("Name")
-    process_table.add_column("CPU %")
+    process_table.add_column("PID", justify="right")
+    process_table.add_column("Process")
+    process_table.add_column("CPU %", justify="right")
 
     for process in processes:
         process_table.add_row(
             str(process.pid),
             process.name,
-            str(process.cpu_percent)
+            f"{process.cpu_percent:.1f}"
         )
 
-    console.print(
+    layout["processes"].update(
         Panel(
             process_table,
-            title="Top Processes"
+            title="Top Processes",
+            border_style="blue",
+            padding=(1, 1)
         )
     )
+
+    return Panel(
+        layout,
+        title="Pulse",
+        title_align="center",
+        border_style="cyan",
+        padding=(1, 1)
+    )
+
+
+def render_dashboard():
+    console.print(build_dashboard())
