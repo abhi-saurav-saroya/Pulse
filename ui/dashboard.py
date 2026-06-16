@@ -7,6 +7,7 @@ from rich.align import Align
 from monitor.cpu import get_cpu_usage
 from monitor.memory import get_memory_info
 from monitor.disk import get_disk_info
+from monitor.network import get_network_info
 from monitor.processes import get_top_processes
 
 from utils.formatter import format_bytes
@@ -19,16 +20,22 @@ def build_dashboard() -> Panel:
     cpu_usage = get_cpu_usage()
     memory = get_memory_info()
     disk = get_disk_info()
+    network = get_network_info()
     processes = get_top_processes()
 
     # Main layout wrapped inside the parent Pulse panel
     layout = Layout(name="root")
 
     # Left side: Disk, Memory, CPU with flexible sizing
-    # Right side: Processes with a larger area
+    # Right side: Top Processes and Network stacked vertically
     layout.split_row(
         Layout(name="stats", ratio=1, minimum_size=36),
         Layout(name="processes", ratio=2, minimum_size=60)
+    )
+
+    layout["processes"].split_column(
+        Layout(name="top_processes", ratio=3),
+        Layout(name="network", size=8)
     )
 
     layout["stats"].split_column(
@@ -98,14 +105,30 @@ def build_dashboard() -> Panel:
             f"{process.cpu_percent:.1f}"
         )
 
-    layout["processes"].update(
+    network_panel = Panel(
+        "\n".join(
+            [
+                f"Sent : {format_bytes(network.bytes_sent)}",
+                f"Recv : {format_bytes(network.bytes_recv)}"
+            ]
+        ),
+        title="Network",
+        border_style="cyan",
+        padding=(1, 2),
+        expand=True
+    )
+
+    layout["top_processes"].update(
         Panel(
             process_table,
             title="Top Processes",
             border_style="blue",
-            padding=(1, 1)
+            padding=(1, 1),
+            expand=True
         )
     )
+
+    layout["network"].update(network_panel)
 
     return Panel(
         layout,
