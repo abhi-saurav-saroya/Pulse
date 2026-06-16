@@ -2,7 +2,7 @@ import psutil
 from models.process_info import ProcessInfo
 
 
-def get_top_processes(limit: int = 5) -> list[ProcessInfo]:
+def get_top_processes(limit: int = 15) -> list[ProcessInfo]:
     processes: list[ProcessInfo] = []
 
     for process in psutil.process_iter(
