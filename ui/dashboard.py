@@ -1,8 +1,11 @@
+from time import sleep
+
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.table import Table
 from rich.align import Align
+from rich.live import Live
 
 from monitor.cpu import get_cpu_usage
 from monitor.memory import get_memory_info
@@ -23,31 +26,31 @@ def build_dashboard() -> Panel:
     network = get_network_info()
     processes = get_top_processes()
 
-    # Main layout wrapped inside the parent Pulse panel
     layout = Layout(name="root")
 
-    # Left side: Disk, Memory, CPU with flexible sizing
-    # Right side: Top Processes and Network stacked vertically
     layout.split_row(
-        Layout(name="stats", ratio=1, minimum_size=36),
-        Layout(name="processes", ratio=2, minimum_size=60)
+        Layout(name="stats", size=38),
+        Layout(name="processes", minimum_size=70)
     )
 
     layout["processes"].split_column(
-        Layout(name="top_processes", ratio=3),
-        Layout(name="network", size=8)
+        Layout(name="top_processes", ratio=3, minimum_size=16),
+        Layout(name="network", size=10)
     )
-
+    
     layout["stats"].split_column(
-        Layout(name="disk", ratio=1, minimum_size=7),
-        Layout(name="memory", ratio=1, minimum_size=7),
-        Layout(name="cpu", size=5)
+        Layout(name="disk", ratio=1, minimum_size=8),
+        Layout(name="memory", ratio=1, minimum_size=8),
+        Layout(name="cpu", size=7)
     )
 
     # CPU Panel
     layout["cpu"].update(
         Panel(
-            Align.center(f"[bold]{cpu_usage:.1f}%[/bold]", vertical="middle", width=16),
+            Align.center(
+                f"[bold]{cpu_usage:.1f}%[/bold]",
+                vertical="middle"
+            ),
             title="CPU Usage",
             border_style="green",
             padding=(0, 1),
@@ -107,12 +110,28 @@ def build_dashboard() -> Panel:
     process_table.add_column("CPU %", justify="center")
 
     for process in processes:
+        name = process.name or "Unknown"
+
+        if len(name) > 25:
+            name = name[:22] + "..."
+
         process_table.add_row(
             str(process.pid),
-            process.name,
+            name,
             f"{process.cpu_percent:.1f}"
         )
 
+    layout["top_processes"].update(
+        Panel(
+            process_table,
+            title="Top Processes",
+            border_style="blue",
+            padding=(1, 1),
+            expand=True
+        )
+    )
+
+    # Network Panel
     network_panel = Panel(
         Align.center(
             "\n".join(
@@ -130,16 +149,6 @@ def build_dashboard() -> Panel:
         expand=True
     )
 
-    layout["top_processes"].update(
-        Panel(
-            process_table,
-            title="Top Processes",
-            border_style="blue",
-            padding=(1, 1),
-            expand=True
-        )
-    )
-
     layout["network"].update(network_panel)
 
     return Panel(
@@ -152,4 +161,11 @@ def build_dashboard() -> Panel:
 
 
 def render_dashboard():
-    console.print(build_dashboard())
+    with Live(
+        console=console,
+        screen=True
+    ) as live:
+
+        while True:
+            live.update(build_dashboard())
+            sleep(1)
