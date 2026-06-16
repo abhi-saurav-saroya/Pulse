@@ -58,15 +58,19 @@ def build_dashboard() -> Panel:
     # Memory Panel
     layout["memory"].update(
         Panel(
-            "\n".join(
-                [
-                    f"Total : {format_bytes(memory.total)}",
-                    f"Used  : {format_bytes(memory.used)}",
-                    f"Free  : {format_bytes(memory.free)}",
-                    f"Usage : {memory.percent:.1f}%"
-                ]
+            Align.center(
+                "\n".join(
+                    [
+                        f"Total : {format_bytes(memory.total)}",
+                        f"Used  : {format_bytes(memory.used)}",
+                        f"Free  : {format_bytes(memory.free)}",
+                        f"Usage : {memory.percent:.1f}%"
+                    ]
+                ),
+                vertical="middle"
             ),
             title="Memory",
+            title_align="center",
             border_style="yellow",
             padding=(1, 2),
             expand=True
@@ -76,15 +80,19 @@ def build_dashboard() -> Panel:
     # Disk Panel
     layout["disk"].update(
         Panel(
-            "\n".join(
-                [
-                    f"Total : {format_bytes(disk.total)}",
-                    f"Used  : {format_bytes(disk.used)}",
-                    f"Free  : {format_bytes(disk.free)}",
-                    f"Usage : {disk.percent:.1f}%"
-                ]
+            Align.center(
+                "\n".join(
+                    [
+                        f"Total : {format_bytes(disk.total)}",
+                        f"Used  : {format_bytes(disk.used)}",
+                        f"Free  : {format_bytes(disk.free)}",
+                        f"Usage : {disk.percent:.1f}%"
+                    ]
+                ),
+                vertical="middle"
             ),
             title="Disk",
+            title_align="center",
             border_style="magenta",
             padding=(1, 2),
             expand=True
@@ -94,9 +102,9 @@ def build_dashboard() -> Panel:
     # Processes Table
     process_table = Table(expand=True)
 
-    process_table.add_column("PID", justify="right")
-    process_table.add_column("Process")
-    process_table.add_column("CPU %", justify="right")
+    process_table.add_column("PID", justify="center")
+    process_table.add_column("Process", justify="center")
+    process_table.add_column("CPU %", justify="center")
 
     for process in processes:
         process_table.add_row(
@@ -106,13 +114,17 @@ def build_dashboard() -> Panel:
         )
 
     network_panel = Panel(
-        "\n".join(
-            [
-                f"Sent : {format_bytes(network.bytes_sent)}",
-                f"Recv : {format_bytes(network.bytes_recv)}"
-            ]
+        Align.center(
+            "\n".join(
+                [
+                    f"Sent : {format_bytes(network.bytes_sent)}",
+                    f"Recv : {format_bytes(network.bytes_recv)}"
+                ]
+            ),
+            vertical="middle"
         ),
         title="Network",
+        title_align="center",
         border_style="cyan",
         padding=(1, 2),
         expand=True
