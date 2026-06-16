@@ -161,11 +161,15 @@ def build_dashboard() -> Panel:
 
 
 def render_dashboard():
-    with Live(
-        console=console,
-        screen=True
-    ) as live:
+    try:
+        with Live(
+            console=console,
+            screen=True
+        ) as live:
 
-        while True:
-            live.update(build_dashboard())
-            sleep(1)
+            while True:
+                live.update(build_dashboard())
+                sleep(1)
+
+    except KeyboardInterrupt:
+        console.print("\n\n\n[yellow]\t\t\t\tPulse stopped.[/yellow]")
